@@ -1,0 +1,225 @@
+SQL> rem 1. Check whether the transaction amount is less than the balance for Withdrawal 
+SQL> rem transaction. Event : Insert/Update (tamount)
+
+SQL> create or replace trigger amt_bal
+  2  before insert or update
+  3  of tamount
+  4  on transaction
+  5  for each row
+  6  declare
+  7  bal int;
+  8  begin
+  9  select balance into bal from account where ano=:new.ano;
+ 10  if :new.ttype='W' and :new.tamount>bal then
+ 11   raise_application_error(-20010,'Available Balance not enough.');
+ 12  end if;
+ 13  end;
+ 14  /
+
+Trigger created.
+
+
+SQL> Savepoint s1;
+
+Savepoint created.
+
+SQL> SELECT ano,balance FROM account WHERE ano=145623;
+
+ANO           BALANCE                                                                                                                                           
+---------- ----------                                                                                                                                           
+145623          67000                                                                                                                                           
+
+SQL> UPDATE transaction SET tamount=tamount+100000 WHERE ttype='W' AND ano=145623;
+UPDATE transaction SET tamount=tamount+100000 WHERE ttype='W' AND ano=145623
+*
+ERROR at line 1:
+ORA-20010: Available Balance not enough. 
+ORA-06512: at "4100.AMT_BAL", line 6 
+ORA-04088: error during execution of trigger '4100.AMT_BAL' 
+
+
+SQL> rem Update not possible since balance not enough
+
+SQL> INSERT INTO transaction VALUES (Trans_No_Seq.nextval,145623,'W','08-AUG-2015',90000);
+INSERT INTO transaction VALUES (Trans_No_Seq.nextval,145623,'W','08-AUG-2015',90000)
+*
+ERROR at line 1:
+ORA-20010: Available Balance not enough. 
+ORA-06512: at "4100.AMT_BAL", line 6 
+ORA-04088: error during execution of trigger '4100.AMT_BAL' 
+
+
+SQL> rem Insert not possible since balance not enough
+ 
+SQL> INSERT INTO transaction VALUES (Trans_No_Seq.nextval,145623,'W','08-AUG-2015',9000);
+
+1 row created.
+
+SQL> Rollback to s1;
+
+Rollback complete.
+
+SQL> alter trigger amt_bal  disable;
+
+Trigger altered.
+
+SQL> rem 2. Implement the following constraint to update the balance of an account for the 
+SQL> rem transactions of Deposit or Withdrawal type. Event : Insert/Update (tamount)
+ 
+SQL> create or replace trigger upd_bal
+  2  before insert or update
+  3  of tamount
+  4  on transaction
+  5  for each row
+  6  declare
+  7  bal int;
+  8  begin
+  9  select balance into bal from account where ano=:new.ano;
+ 10  if :new.ttype='W' then
+ 11   bal:=bal-:new.tamount;
+ 12  else
+ 13   bal:=bal+:new.tamount;
+ 14  end if;
+ 15  update account set balance=bal where ano=:new.ano;
+ 16  end;
+ 17  /
+
+Trigger created.
+
+SQL> Savepoint s1;
+
+Savepoint created.
+
+SQL> SELECT * FROM account WHERE ano=145623;
+
+ANO        ATYPE         BALANCE CID                                                                                                                            
+---------- ---------- ---------- ----------                                                                                                                     
+145623     SB              67000 100                                                                                                                            
+
+SQL> INSERT INTO transaction VALUES (Trans_No_Seq.nextval,145623,'W','08-AUG-2015',9000);
+
+1 row created.
+
+SQL> SELECT * FROM account WHERE ano=145623;
+
+ANO        ATYPE         BALANCE CID                                                                                                                            
+---------- ---------- ---------- ----------                                                                                                                     
+145623     SB              58000 100                                                                                                                            
+
+SQL> rem Balance updated for Withdrawal
+ 
+SQL> INSERT INTO transaction VALUES (Trans_No_Seq.nextval,145623,'D','10-AUG-2015',8500);
+
+1 row created.
+
+SQL> SELECT * FROM account WHERE ano=145623;
+
+ANO        ATYPE         BALANCE CID                                                                                                                            
+---------- ---------- ---------- ----------                                                                                                                     
+145623     SB              66500 100                                                                                                                            
+
+SQL> rem Balance updated for Deposit
+
+SQL> Rollback to s1;
+
+Rollback complete.
+
+SQL> alter trigger upd_bal disable;
+
+Trigger altered.
+
+SQL> rem 3. Implement the following constraint for Withdrawal transactions: Event : Insert
+SQL> rem a. A customer can have at most 3 withdrawals per day per account.
+SQL> rem b. The maximum amount of withdrawal for each day is Rs.30000/­
+ 
+SQL> create or replace trigger wdraw_cons
+  2  before insert
+  3  on transaction
+  4  for each row
+  5  declare
+  6  cnt int;
+  7  amt int;
+  8  begin
+  9  if(:new.tamount>30000) then
+ 10   raise_application_error(-20015,'A customer can withdraw atmost Rs. 30000/- in one day');
+ 11  else
+ 12   select count(ttype),sum(tamount) into cnt,amt from transaction
+ 13    where ttype='W'and ano=:new.ano and tdate=:new.tdate;
+ 14   if(amt>30000) then
+ 15    raise_application_error(-20015,'A customer can withdraw atmost Rs. 30000/- in one day');
+ 16   end if;
+ 17   if(cnt>=3) then
+ 18    raise_application_error(-20005,'A customer have at most 3 withdrawals in one day');
+ 19   end if;
+ 20  end if;
+ 21  end;
+ 22  /
+
+Trigger created.
+
+SQL> Savepoint s1;
+
+Savepoint created.
+
+SQL> INSERT INTO transaction VALUES (Trans_No_Seq.nextval,214567,'W','30-AUG-2015',1200);
+
+1 row created.
+
+SQL> INSERT INTO transaction VALUES (Trans_No_Seq.nextval,214567,'W','30-AUG-2015',1500);
+
+1 row created.
+
+SQL> INSERT INTO transaction VALUES (Trans_No_Seq.nextval,214567,'W','30-AUG-2015',750);
+
+1 row created.
+
+SQL> INSERT INTO transaction VALUES (Trans_No_Seq.nextval,214567,'W','30-AUG-2015',900);
+INSERT INTO transaction VALUES (Trans_No_Seq.nextval,214567,'W','30-AUG-2015',900)
+*
+ERROR at line 1:
+ORA-20005: A customer have at most 3 withdrawals in one day 
+ORA-06512: at "4100.WDRAW_CONS", line 14 
+ORA-04088: error during execution of trigger '4100.WDRAW_CONS' 
+
+
+SQL> rem Only three withdrawals possible in one day
+ 
+SQL> INSERT INTO transaction VALUES (Trans_No_Seq.nextval,987341,'W','18-NOV-2015',15000);
+
+1 row created.
+
+SQL> INSERT INTO transaction VALUES (Trans_No_Seq.nextval,987341,'W','18-NOV-2015',14000);
+
+1 row created.
+
+SQL> INSERT INTO transaction VALUES (Trans_No_Seq.nextval,987341,'W','18-NOV-2015',3000);
+INSERT INTO transaction VALUES (Trans_No_Seq.nextval,987341,'W','18-NOV-2015',3000)
+*
+ERROR at line 1:
+ORA-20015: A customer can withdraw atmost Rs. 30000/- in one day 
+ORA-06512: at "4100.WDRAW_CONS", line 11 
+ORA-04088: error during execution of trigger '4100.WDRAW_CONS' 
+
+
+SQL> rem Cannot withdraw more than 30000 in one day
+ 
+SQL> INSERT INTO transaction VALUES (Trans_No_Seq.nextval,300001,'W','25-NOV-2015',40000);
+INSERT INTO transaction VALUES (Trans_No_Seq.nextval,300001,'W','25-NOV-2015',40000)
+*
+ERROR at line 1:
+ORA-20015: A customer can withdraw atmost Rs. 30000/- in one day 
+ORA-06512: at "4100.WDRAW_CONS", line 6 
+ORA-04088: error during execution of trigger '4100.WDRAW_CONS' 
+
+
+SQL> rem Cannot withdraw more than 30000 in one day
+ 
+SQL> Rollback to s1;
+
+Rollback complete.
+
+SQL> alter trigger wdraw_cons disable;
+
+Trigger altered.
+
+SQL> spool off;

@@ -1,0 +1,162 @@
+SQL> rem 1. Check whether the given pizza type is available. If not display appropriate message.
+
+SQL> declare
+  2  p_type pizza.pizza_type%type;
+  3  
+  4  begin
+  5  p_type:='&pizza_type';
+  6  select pizza_type into p_type from pizza where pizza_type = p_type;
+  7  if sql%found then
+  8   dbms_output.put_line('Pizza type found.');
+  9  end if;
+ 10  
+ 11  exception
+ 12   when no_data_found then
+ 13   dbms_output.put_line('Pizza Type not found');
+ 14  end;
+ 15  /
+Enter value for pizza_type: Pan
+old   5: p_type:='&pizza_type';
+new   5: p_type:='Pan';
+Pizza type found.                                                                                                                                               
+
+PL/SQL procedure successfully completed.
+
+SQL> /
+Enter value for pizza_type: Cheese
+old   5: p_type:='&pizza_type';
+new   5: p_type:='Cheese';
+Pizza Type not found                                                                                                                                            
+
+PL/SQL procedure successfully completed.
+ 
+SQL> rem 2. For the given customer name and a range of order date, find whether a customer had placed any order
+SQL> rem , if so display the number of orders placed by the customer along with the order number(s).
+ 
+SQL> declare
+  2  c_name customer.cust_name%type;
+  3  min_order_date orders.order_date%type;
+  4  max_order_date orders.order_date%type;
+  5  orderno orders.order_no%type;
+  6  counter number(2) := 0;
+  7  cursor c1 is select o.order_no
+  8        from customer c,orders o
+  9        where c.cust_id = o.cust_id
+ 10        and c.cust_name=c_name
+ 11        and o.order_date > min_order_date
+ 12        and o.order_date < max_order_date;
+ 13  
+ 14  begin
+ 15  c_name:='&Customer_Name';
+ 16  min_order_date:='&Minimum_order_date';
+ 17  max_order_date:='&Maximum_order_date';
+ 18  dbms_output.put_line('Customer Name : '||c_name||' .');
+ 19  for cur in c1 loop
+ 20   dbms_output.put_line(' Order Number : '||cur.order_no||' .');
+ 21   counter := counter + 1;
+ 22  end loop;
+ 23  dbms_output.put_line('Number of Orders is  : '||counter||' .');
+ 24  end;
+ 25  /
+
+Enter value for customer_name: Hari
+old  15: c_name:='&Customer_Name';
+new  15: c_name:='Hari';
+Enter value for minimum_order_date: 28-jun-2015
+old  16: min_order_date:='&Minimum_order_date';
+new  16: min_order_date:='28-jun-2015';
+Enter value for maximum_order_date: 10-jul-2015
+old  17: max_order_date:='&Maximum_order_date';
+new  17: max_order_date:='10-jul-2015';
+Customer Name : Hari .                                                                                                                                          
+Order Number : OP104 .                                                                                                                                          
+Order Number : OP108 .                                                                                                                                          
+Order Number : OP113 .                                                                                                                                          
+Number of Orders is  : 3 .                                                                                                                                      
+
+PL/SQL procedure successfully completed.
+
+SQL> rem 3. Display the customer name along with the details of pizza type and its quantity ordered for the 
+SQL> rem given order number. Also find the total quantity ordered for the given order number.
+ 
+SQL> declare
+  2  cname customer.cust_name%type;
+  3  ptype pizza.pizza_type%type;
+  4  orderno orders.order_no%type;
+  5  orderno1 orders.order_no%type;
+  6  quan order_list.qty%type;
+  7  counter number(2) := 0;
+  8  cursor c1 is select p.pizza_type,os.qty
+  9        from orders o,order_list os,pizza p
+ 10        where p.pizza_id = os.pizza_id
+ 11        and o.order_no = os.order_no
+ 12        and o.order_no = orderno;
+ 13  
+ 14  begin
+ 15  orderno:='&Order_Number';
+ 16  select order_no into orderno from orders where order_no=orderno;
+ 17  if(sql%found) then
+ 18   select c.cust_name into cname from customer c,orders o where c.cust_id=o.cust_id and o.order_no=orderno;
+ 19   dbms_output.put_line('Customer Name : '||cname||' .');
+ 20   dbms_output.put_line('Ordered the following pizza .');
+ 21   dbms_output.put_line('Pizza Type'||chr(9)||' Quantity');
+ 22   dbms_output.put_line('------------------------');
+ 23   for cur in c1 loop
+ 24    dbms_output.put_line(cur.pizza_type||chr(9)||chr(9)||' '||cur.qty);
+ 25    counter := counter+cur.qty;
+ 26   end loop;
+ 27   dbms_output.put_line('Number of Orders is  : '||counter||' .');
+ 28  end if;
+ 29  
+ 30  exception
+ 31   when no_data_found then
+ 32   dbms_output.put_line('Invalid Order Number.');
+ 33  end;
+ 34  /
+Enter value for order_number: OP100
+old  15: orderno:='&Order_Number';
+new  15: orderno:='OP100';
+Customer Name : Hari .                                                                                                                                          
+Ordered the following pizza .                                                                                                                                   
+Pizza Type	 Quantity                                                                                                                                            
+------------------------                                                                                                                                        
+Pan		 3                                                                                                                                                         
+Grilled		 2                                                                                                                                                     
+Italian		 1                                                                                                                                                     
+Spanish		 5                                                                                                                                                     
+Number of Orders is  : 11 .                                                                                                                                     
+
+PL/SQL procedure successfully completed.
+
+SQL> /
+Enter value for order_number: OP125
+old  15: orderno:='&Order_Number';
+new  15: orderno:='OP125';
+Invalid Order Number.                                                                                                                                           
+
+PL/SQL procedure successfully completed.
+
+SQL> rem 4. Display the total number of orders that contains one pizza type, two pizza type and so on.
+ 
+SQL> declare
+  2  no_type number;
+  3  no_odrs number;
+  4  
+  5  begin
+  6  select count(pizza_id) into no_type from pizza;
+  7  dbms_output.put_line('Number of orders that contain');
+  8  for ctr in 1..no_type loop
+  9   select count(*) into no_odrs from (select order_no from order_list group by order_no having count(distinct(pizza_id)) = ctr);
+ 10   dbms_output.put_line(ctr ||' Pizza type - '|| no_odrs);
+ 11  end loop;
+ 12  end;
+ 13  /
+Number of orders that contain                                                                                                                                   
+1 Pizza type - 8                                                                                                                                                
+2 Pizza type - 3                                                                                                                                                
+3 Pizza type - 2                                                                                                                                                
+4 Pizza type - 1                                                                                                                                                
+
+PL/SQL procedure successfully completed.
+
+SQL> spool off;

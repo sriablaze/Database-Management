@@ -1,0 +1,75 @@
+SQL> rem creating customers
+
+SQL> create table customers(
+  2  cid number(8) constraint custs_pk primary key,
+  3  cname varchar(20),
+  4  age int,
+  5  address varchar(30),
+  6  phone number(10)
+  7  );
+
+Table created.
+
+ 
+SQL> rem creating account
+ 
+SQL> create table account(
+  2  cid number(8) constraint acc_fk references customers(cid),
+  3  ano number(8) constraint acc_pk primary key,
+  4  atype char(7) constraint acc_ck check(atype in ('savings','current')),
+  5  balance number(10)
+  6  );
+
+Table created.
+
+ 
+SQL> rem creating table transactions
+ 
+SQL> create table transactions(
+  2  ano number(8) constraint trans_fk references account(ano),
+  3  tid number(8) constraint trans_pk primary key,
+  4  ttype char(1) constraint trans_ck check(ttype in ('D','W')),
+  5  tdate date,
+  6  tamount number(10)
+  7  );
+
+Table created.
+ 
+SQL> rem inserting values into customers
+ 
+SQL> insert into customers values(1098,'Aera',25,'87,Street 19,Sector 11',9102837465);
+
+1 row created.
+
+ 
+SQL> insert into customers values(7643,'Zia',29,'17,Street 3,Sector 7',9110287763);
+
+1 row created.
+
+ 
+SQL> insert into customers values(2586,'Ronav',36,'45,Street 14,Sector 13',9640295736);
+
+1 row created.
+
+ 
+SQL> rem inserting values into account
+ 
+SQL> insert into account values(1098,2374,'savings',85000);
+
+1 row created.
+
+ 
+SQL> insert into account values(7643,9012,'savings',150000);
+
+1 row created.
+
+ 
+SQL> insert into account values(7643,10568,'current',2000000);
+
+1 row created.
+
+ 
+SQL> insert into account values(2586,26017,'current',90000);
+
+1 row created.
+

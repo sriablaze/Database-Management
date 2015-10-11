@@ -1,0 +1,359 @@
+SQL> @ 'C:/Users/4100/Desktop/SQL/Ex4database.sql';
+SQL> rem @ 'C:/Users/4100/Desktop/SQL/Ex4database.sql 
+SQL> rem @ 'C:/Users/4100/Desktop/SQL/Exercise4.sql';
+ 
+SQL> rem 1. Create a sequence named Trans_No_Seq which generates the Transaction number starting from 10001, increment by 1, to maximum of 99999. NOT DONE
+SQL> rem Include options of cycle,cache and order. Use this sequence to populate the rows of transaction table.
+ 
+ 
+SQL> create sequence trans_seq
+  2  increment by 1
+  3  maxvalue 99999
+  4  minvalue 10001
+  5  nocycle
+  6  cache 10
+  7  order;
+
+Sequence created.
+
+ 
+SQL> rem inserting values into transactions
+ 
+SQl> insert into transactions values(2374,trans_seq.nextval,'D','07-jul-2015',5000);
+
+1 row created.
+ 
+SQL> insert into transactions values(9012,trans_seq.nextval,'W','13-jul-2015',6000);
+
+1 row created.
+ 
+SQL> insert into transactions values(10568,trans_seq.nextval,'D','19-jul-2015',3700);
+
+1 row created.
+ 
+SQL> insert into transactions values(26017,trans_seq.nextval,'D','02-aug-2015',2400);
+
+1 row created.
+ 
+SQL> insert into transactions values(9012,trans_seq.nextval,'W','03-aug-2015',9000);
+
+1 row created.
+ 
+SQL> insert into transactions values(10568,trans_seq.nextval,'D','04-aug-2015',7000);
+
+1 row created.
+ 
+SQL> insert into transactions values(26017,trans_seq.nextval,'W','06-aug-2015',4500);
+
+1 row created.
+ 
+SQL> insert into transactions values(2374,trans_seq.nextval,'W','09-aug-2015',50000);
+
+1 row created.
+ 
+SQL> select * from customers;
+
+       CID CNAME                       AGE ADDRESS                             PHONE                                                                            
+---------- -------------------- ---------- ------------------------------ ----------                                                                            
+      1098 Aera                         25 87,Street 19,Sector 11         9102837465                                                                            
+      7643 Zia                          29 17,Street 3,Sector 7           9110287763                                                                            
+      2586 Ronav                        36 45,Street 14,Sector 13         9640295736                                                                            
+
+SQL> select * from account;
+
+       CID        ANO ATYPE      BALANCE                                                                                                                        
+---------- ---------- ------- ----------                                                                                                                        
+      1098       2374 savings      85000                                                                                                                        
+      7643       9012 savings     150000                                                                                                                        
+      7643      10568 current    2000000                                                                                                                        
+      2586      26017 current      90000                                                                                                                        
+ 
+SQL> select * from transactions;
+
+       ANO        TID T TDATE        TAMOUNT                                                                                                                    
+---------- ---------- - --------- ----------                                                                                                                    
+      2374      10001 D 07-JUL-15       5000                                                                                                                    
+      9012      10002 W 13-JUL-15       6000                                                                                                                    
+     10568      10003 D 19-JUL-15       3700                                                                                                                    
+     26017      10004 D 02-AUG-15       2400                                                                                                                    
+      9012      10005 W 03-AUG-15       9000                                                                                                                    
+     10568      10006 D 04-AUG-15       7000                                                                                                                    
+     26017      10007 W 06-AUG-15       4500                                                                                                                    
+      2374      10008 W 09-AUG-15      50000                                                                                                                    
+
+8 rows selected.
+ 
+SQL> rem 2.Create a view named Balance_50K_1L, which keeps track of account details that has balance in the range of 50,000 to 1 Lakh. 
+ 
+SQL> create view Balance_50K_1L
+  2  (cid,a_no,a_type,a_balance) as
+  3  select cid,ano,atype,balance
+  4  from account
+  5  where balance > 50000 and balance < 100000
+  6  with check option constraint balance_check_option;
+
+View created.
+ 
+SQL> savepoint s1;
+
+Savepoint created.
+ 
+SQL> select * from Balance_50K_1L;
+
+       CID       A_NO A_TYPE   A_BALANCE                                                                                                                        
+---------- ---------- ------- ----------                                                                                                                        
+      1098       2374 savings      85000                                                                                                                        
+      2586      26017 current      90000                                                                                                                        
+ 
+SQL> rem Inserting customer into view through base table;
+ 
+SQL> insert into customers values(3918,'Marina',26,'10,Street 6,Sector 3',9570365486);
+
+1 row created.
+ 
+SQL> insert into account values(3918,9810,'savings',80000);
+
+1 row created.
+ 
+SQL> rem Inserting customer into view directly
+ 
+SQL> insert into Balance_50K_1L values(3918,39800,'current',98000);
+
+1 row created.
+ 
+SQL> rem Updating view
+ 
+SQL> update Balance_50K_1L set a_balance=a_balance+1000 where a_no=2374;
+
+1 row updated.
+ 
+SQL> select * from Balance_50K_1L where a_no=2374;
+
+       CID       A_NO A_TYPE   A_BALANCE                                                                                                                        
+---------- ---------- ------- ----------                                                                                                                        
+      1098       2374 savings      86000                                                                                                                        
+ 
+SQL> rem Balance_50K_1L can be updated
+ 
+SQL> rollback to s1;
+
+Rollback complete.
+ 
+SQL> rem 3. Create a view named Customer_Account that will keep track of the details of each customer with his/her id, name, account number
+SQL> rem , account type and balance who have both savings and current account.
+  
+SQL> create view Customer_Account
+  2  (cid,cname,ano,atype,balance) as
+  3  select c.cid,c.cname,a.ano,a.atype,a.balance
+  4  from customers c,account a
+  5  where c.cid=a.cid
+  6  and c.cid=(select cid from account where atype in ('savings')
+  7  		intersect
+  8  		select cid from account where atype in ('current'))
+  9  with check option constraint cust_acc_check_option;
+
+View created.
+ 
+SQL> savepoint s2;
+
+Savepoint created.
+ 
+SQL> select * from Customer_Account;
+
+       CID CNAME                       ANO ATYPE      BALANCE                                                                                                   
+---------- -------------------- ---------- ------- ----------                                                                                                   
+      7643 Zia                        9012 savings     150000                                                                                                   
+      7643 Zia                       10568 current    2000000                                                                                                   
+ 
+SQL> update Customer_Account set balance=balance+1000 where cid=7643;
+
+2 rows updated.
+ 
+SQL> select * from Customer_Account where cid=7643;
+
+       CID CNAME                       ANO ATYPE      BALANCE                                                                                                   
+---------- -------------------- ---------- ------- ----------                                                                                                   
+      7643 Zia                        9012 savings     151000                                                                                                   
+      7643 Zia                       10568 current    2001000                                                                                                   
+ 
+SQL> select * from account where cid=7643;
+
+       CID        ANO ATYPE      BALANCE                                                                                                                        
+---------- ---------- ------- ----------                                                                                                                        
+      7643       9012 savings     151000                                                                                                                        
+      7643      10568 current    2001000                                                                                                                        
+ 
+SQL> SELECT COLUMN_NAME,UPDATABLE FROM USER_UPDATABLE_COLUMNS WHERE TABLE_NAME='CUSTOMER_ACCOUNT';
+
+COLUMN_NAME                    UPD                                                                                                                              
+------------------------------ ---                                                                                                                              
+CID                            NO                                                                                                                               
+CNAME                          NO                                                                                                                               
+ANO                            YES                                                                                                                              
+ATYPE                          YES                                                                                                                              
+BALANCE                        YES                                                                                                                              
+
+SQL> update Customer_Account set cname='Roy' where cid=1098;
+update Customer_Account set cname='Roy' where cid=1098
+                            *
+ERROR at line 1:
+ORA-01779: cannot modify a column which maps to a non key-preserved table 
+ 
+SQL> rem Customer_Account is a join view that can be updated
+ 
+SQL> rollback to s2;
+
+Rollback complete.
+ 
+SQL> rem 4. Create a view named Transaction_Count which displays total number of transactions performed by each account.
+ 
+SQL> create view Transaction_Count
+  2  (Ano,total_number) as
+  3  select ano,count(tid)
+  4  from transactions
+  5  group by ano
+  6  with check option constraint trans_count_check_option;
+
+View created.
+
+SQL> select * from Transaction_Count;
+
+       ANO TOTAL_NUMBER                                                                                                                                         
+---------- ------------                                                                                                                                         
+      2374            2                                                                                                                                         
+      9012            2                                                                                                                                         
+     10568            2                                                                                                                                         
+     26017            2                                                                                                                                         
+ 
+SQL> update Transaction_Count set total_number=total_number+1 where ano=2374;
+update Transaction_Count set total_number=total_number+1 where ano=2374
+       *
+ERROR at line 1:
+ORA-01732: data manipulation operation not legal on this view 
+
+
+SQL> rem Cannot use DML statements in view because it has a group by clause
+ 
+SQL> rem 5. Create a synonym named Transaction_syn for transaction relation. Perform the DML operations on the 
+SQL> rem transaction using synonym name.
+ 
+SQL> create synonym Transaction_syn
+  2  for transactions;
+
+Synonym created.
+ 
+SQL> savepoint s3;
+
+Savepoint created.
+ 
+SQL> select * from Transaction_syn;
+
+       ANO        TID T TDATE        TAMOUNT                                                                                                                    
+---------- ---------- - --------- ----------                                                                                                                    
+      2374      10001 D 07-JUL-15       5000                                                                                                                    
+      9012      10002 W 13-JUL-15       6000                                                                                                                    
+     10568      10003 D 19-JUL-15       3700                                                                                                                    
+     26017      10004 D 02-AUG-15       2400                                                                                                                    
+      9012      10005 W 03-AUG-15       9000                                                                                                                    
+     10568      10006 D 04-AUG-15       7000                                                                                                                    
+     26017      10007 W 06-AUG-15       4500                                                                                                                    
+      2374      10008 W 09-AUG-15      50000                                                                                                                    
+
+8 rows selected.
+ 
+SQL> insert into Transaction_syn values(10568,trans_seq.nextval,'D','12-aug-2015',5000);
+
+1 row created.
+ 
+SQL> select * from Transaction_syn  where ano=26017;
+
+       ANO        TID T TDATE        TAMOUNT                                                                                                                    
+---------- ---------- - --------- ----------                                                                                                                    
+     26017      10004 D 02-AUG-15       2400                                                                                                                    
+     26017      10007 W 06-AUG-15       4500                                                                                                                    
+ 
+SQL> update Transaction_syn set tamount=tamount+1000 where ano=26017;
+
+2 rows updated.
+ 
+SQL> select * from Transaction_syn where ano=26017;
+
+       ANO        TID T TDATE        TAMOUNT                                                                                                                    
+---------- ---------- - --------- ----------                                                                                                                    
+     26017      10004 D 02-AUG-15       3400                                                                                                                    
+     26017      10007 W 06-AUG-15       5500                                                                                                                    
+
+ 
+SQL> select * from transactions where ano=26017;
+
+       ANO        TID T TDATE        TAMOUNT                                                                                                                    
+---------- ---------- - --------- ----------                                                                                                                    
+     26017      10004 D 02-AUG-15       3400                                                                                                                    
+     26017      10007 W 06-AUG-15       5500                                                                                                                    
+
+ 
+SQL> rollback to s3;
+
+Rollback complete.
+
+ 
+SQL> rem 6. Create an index named Cid_Cname on customer id and customer name of customer relation. Create an 
+SQL> rem unique index on account no in transaction relation.
+ 
+SQL> create index Cid_Cname
+  2  on customers(cid,cname);
+
+Index created.
+ 
+SQL> create unique index Ano_index
+  2  on transactions(ano,tid);
+
+Index created.
+ 
+SQL> commit;
+
+Commit complete.
+ 
+SQL> rem 7. Drop all the above created database objects.
+ 
+SQL> drop index Ano_index;
+
+Index dropped.
+ 
+SQL> drop index Cid_Cname;
+
+Index dropped.
+ 
+SQL> drop synonym Transaction_syn;
+
+Synonym dropped.
+
+SQL> drop view Transaction_Count;
+
+View dropped.
+ 
+SQL> drop view Customer_Account;
+
+View dropped.
+
+SQL> drop view Balance_50K_1L;
+
+View dropped.
+
+SQL> drop sequence trans_seq;
+
+Sequence dropped.
+
+SQL> drop table transactions;
+
+Table dropped.
+
+SQL> drop table account;
+
+Table dropped.
+ 
+SQL> drop table customers;
+
+Table dropped.
+
+SQL> spool off;

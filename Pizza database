@@ -1,0 +1,251 @@
+REM Pizza database contains the following tables.
+
+SQL> rem creating table customer
+SQL> create table customer(
+  2  cust_id varchar2(4) constraint customer_pk primary key,
+  3  cust_name varchar2(20),
+  4  address varchar2(30),
+  5  phone number(10)
+  6  );
+
+Table created.
+ 
+SQL> rem creating table pizza
+SQL> create table pizza(
+  2  pizza_id varchar2(4) constraint pizza_pk primary key,
+  3  pizza_type varchar2(20),
+  4  unit_price number(5)
+  5  );
+
+Table created.
+
+SQL> crrating table orders
+SP2-0734: unknown command beginning "crrating t..." - rest of line ignored.
+SQL> create table orders(
+  2  order_no varchar2(5) constraint orders_pk primary key,
+  3  cust_id varchar2(4),
+  4  order_date date,
+  5  delv_date date,
+  6   constraint  order_fk foreign key(cust_id) references customer (cust_id)
+  7  );
+
+Table created.
+
+SQL> creating table order_list
+SP2-0734: unknown command beginning "creating t..." - rest of line ignored.
+SQL> create table order_list(
+  2  order_no varchar2(5),
+  3  pizza_id varchar2(4),
+  4  qty number(3) not null,
+  5  constraint orderlist_pk primary key(order_no,pizza_id),
+  6  constraint ofk1 foreign key(order_no) references orders(order_no),
+  7  constraint ofk2 foreign key(pizza_id) references pizza(pizza_id)
+  8  );
+
+Table created.
+ 
+SQL> REm customer(cust_id, cust_name, address, phone)
+SQL> REM pizza (pizza_id, pizza_type, unit_price)
+SQL> REM orders(order_no, cust_id, order_date ,delv_date, total_amt)
+SQL> REM order_list(order_no, pizza_id, qty) 
+SQL> REM ------------------------------------------------------------------------------------------
+SQL> REM customer(cust_id, cust_name,address,phone)
+SQL> insert into customer values('c001','Hari','32 RING ROAD, ALWARPET',9001200031);
+
+1 row created.
+
+SQL> insert into customer values('c002','Prasanth','42 Bull ROAD, Numgambakkam',9444120003);
+
+1 row created.
+
+SQL> insert into customer values('c003','Neethu','12a LB ROAD, Tiruvanmiyur',9840112003);
+
+1 row created.
+
+SQL> insert into customer values('c004','Peter','P.H ROAD, Annanagar',9845712993);
+
+1 row created.
+
+SQL> insert into customer values('c005','Sindhu','100 feet ROAD, Vadapalani',9840166677);
+
+1 row created.
+
+SQL> insert into customer values('c006','Brinda','100, GST ROAD, TAMBARAM',9876543210);
+
+1 row created.
+
+SQL> insert into customer values('c007','Ramkumar','10,3rd street, Perambur',9872894567);
+
+1 row created.
+ 
+SQL> REM pizza (pizza_id, pizza_type, unit_price) 
+SQL> insert into pizza values('p001','Pan',130);
+
+1 row created.
+
+SQL> insert into pizza values('p002','Grilled',230);
+
+1 row created.
+
+SQL> insert into pizza values('p003','Italian',200);
+
+1 row created.
+
+SQL> insert into pizza values('p004','Spanish',260);
+
+1 row created.
+ 
+SQL> REM orders(order_no, cust_id, order_date ,delv_date) 
+SQL> insert into orders values('OP100','c001','28-JUN-2015','30-JUN-2015');
+
+1 row created.
+
+SQL> insert into orders values('OP101','c002','28-JUN-2015','29-JUN-2015');
+
+1 row created.
+ 
+SQL> insert into orders values('OP102','c003','29-JUN-2015','30-JUN-2015');
+
+1 row created.
+
+SQL> insert into orders values('OP103','c004','29-JUN-2015','30-JUN-2015');
+
+1 row created.
+
+SQL> insert into orders values('OP104','c001','29-JUN-2015','01-JUN-2015');
+
+1 row created.
+
+SQL> insert into orders values('OP105','c002','29-JUN-2015','29-JUN-2015');
+
+1 row created.
+
+SQL> 
+SQL> insert into orders values('OP106','c005','01-JUL-2015','01-JUL-2015');
+
+1 row created.
+
+SQL> insert into orders values('OP107','c004','01-JUL-2015','02-JUL-2015');
+
+1 row created.
+
+SQL> insert into orders values('OP108','c001','01-JUL-2015','01-JUL-2015');
+
+1 row created.
+
+SQL> insert into orders values('OP109','c003','01-JUL-2015','01-JUL-2015');
+
+1 row created.
+
+SQL> insert into orders values('OP110','c002','01-JUL-2015','02-JUL-2015');
+
+1 row created.
+ 
+SQL> insert into orders values('OP111','c006','02-JUL-2015','02-JUL-2015');
+
+1 row created.
+
+SQL> insert into orders values('OP112','c005','02-JUL-2015','02-JUL-2015');
+
+1 row created.
+
+SQL> insert into orders values('OP113','c001','02-JUL-2015','03-JUL-2015');
+
+1 row created.
+ 
+SQL> REM order_list(order_no, pizza_id, qty) 
+SQL> insert into order_list values('OP100','p001',3);
+
+1 row created.
+
+SQL> insert into order_list values('OP100','p002',2);
+
+1 row created.
+
+SQL> insert into order_list values('OP100','p003',1);
+
+1 row created.
+
+SQL> insert into order_list values('OP100','p004',5);
+
+1 row created.
+ 
+SQL> insert into order_list values('OP101','p003',2);
+
+1 row created.
+
+SQL> insert into order_list values('OP101','p001',6);
+
+1 row created.
+
+SQL> insert into order_list values('OP101','p004',8);
+
+1 row created.
+
+SQL> insert into order_list values('OP102','p003',3);
+
+1 row created.
+
+SQL> insert into order_list values('OP103','p001',3);
+
+1 row created.
+
+SQL> insert into order_list values('OP103','p004',1);
+
+1 row created.
+
+SQL> insert into order_list values('OP104','p003',6);
+
+1 row created.
+
+SQL> insert into order_list values('OP104','p004',5);
+
+1 row created.
+ 
+SQL> insert into order_list values('OP105','p001',3);
+
+1 row created.
+
+SQL> insert into order_list values('OP106','p002',2);
+
+1 row created.
+
+SQL> insert into order_list values('OP107','p002',1);
+
+1 row created.
+
+SQL> insert into order_list values('OP107','p003',1);
+
+1 row created.
+
+SQL> insert into order_list values('OP108','p004',2);
+
+1 row created.
+
+SQL> insert into order_list values('OP109','p001',4);
+
+1 row created.
+ 
+SQL> insert into order_list values('OP110','p004',5);
+
+1 row created.
+ 
+SQL> insert into order_list values('OP111','p002',1);
+
+1 row created.
+ 
+SQL> insert into order_list values('OP112','p001',2);
+
+1 row created.
+
+SQL> insert into order_list values('OP112','p002',1);
+
+1 row created.
+
+SQL> insert into order_list values('OP112','p004',1);
+
+1 row created.
+
+SQL> insert into order_list values('OP113','p003',3);
+
+1 row created.
