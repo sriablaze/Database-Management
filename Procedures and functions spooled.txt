@@ -1,0 +1,346 @@
+SQL> @e:/ex6/ex6final.sql
+SQL> REM 1.Write a stored procedure to display the total number of pizza's
+SQL> REM ordered by the given  order number. (Use IN, OUT)
+SQL> 
+SQL> create or replace procedure odet(o_id IN order_list.order_no%type) is
+  2  o_qty order_list.qty%type;
+  3  total orders.total_amt%type;
+  4  o_no order_list.order_no%type;
+  5  begin
+  6  select order_no INTO o_no from orders where order_no=o_id;
+  7  select sum(qty) into total from order_list where order_no=o_id group by(order_no);
+  8  dbms_output.put_line('Order id : '||o_id||' Total qty : '||total);
+  9  
+ 10  exception
+ 11  when NO_DATA_FOUND then
+ 12  dbms_output.put_line('Order number not found!!');
+ 13  end;
+ 14  /
+
+Procedure created.
+
+SQL> 
+SQL> declare
+  2  o_id order_list.order_no%type;
+  3  
+  4  begin
+  5  o_id:='&oid';
+  6  odet(o_id);
+  7  end;
+  8  /
+Enter value for oid: OP100
+old   5: o_id:='&oid';
+new   5: o_id:='OP100';
+Order id : OP100 Total qty : 11                                                 
+
+PL/SQL procedure successfully completed.
+
+SQL> 
+SQL> /
+Enter value for oid: OP119
+old   5: o_id:='&oid';
+new   5: o_id:='OP119';
+Order number not found!!                                                        
+
+PL/SQL procedure successfully completed.
+
+SQL> REM 2.
+SQL> rem For the given order number, calculate the Discount as follows:
+SQL> rem For total amount > 2000 and total amount < 5000: 
+SQL> rem Discount=5%
+SQL> rem For total amount > 5000 and total amount < 10000: 
+SQL> rem Discount=10%
+SQL> rem For total amount > 10000: 
+SQL> rem Discount=20%
+SQL> rem Calculate the total amount (after the discount) and update the same in orders table. 
+SQL> rem Print the order.
+SQL>
+SQL> CREATE OR REPLACE PROCEDURE amount(o_no IN orders.order_no%type,dis OUT orders.total_amt%type,amt OUT orders.total_amt%type) is
+  2  
+  3  begin
+  4  select sum(o.qty*p.unit_price) into amt from order_list o,pizza p where o.order_no=o_no AND p.pizza_id=o.pizza_id;
+  5  dbms_output.put_line('Total Amount:'||amt);
+  6  
+  7  if(amt >2000 AND amt < 5000) then
+  8  dis:=((5*amt)/100);
+  9  elsif(amt>5000 AND amt<10000) then
+ 10  dis:=((10*amt)/100);
+ 11  elsif(amt>10000) then
+ 12  dis:=((amt*20)/100);
+ 13  else
+ 14  dis:=0;
+ 15  
+ 16  end if;
+ 17  
+ 18  update orders set total_amt=amt-dis where order_no=o_no;
+ 19  select total_amt into amt from orders where order_no=o_no;
+ 20  
+ 21  end;
+ 22  /
+
+Procedure created.
+
+SQL> 
+SQL> CREATE OR REPLACE PROCEDURE caldisplay(o_no IN orders.order_no%type) is
+  2  c_name customer.cust_name%type;
+  3  o_date orders.order_date%type;
+  4  ph customer.phone%type;
+  5  co number(2):=0;
+  6  o_id orders.order_no%type;
+  7  dis orders.total_amt%type;
+  8  amt orders.total_amt%type;
+  9  
+ 10  cursor c1 is select p.pizza_type,l.qty,p.unit_price from orders o,pizza p,order_list l
+ 11  where o.order_no=l.order_no AND o.order_no=o_no AND p.pizza_id=l.pizza_id;
+ 12  
+ 13  begin
+ 14  select c.cust_name,c.phone,o.order_date,o.order_no into c_name,ph,o_date,o_id FROM customer c,orders o where o.cust_id=c.cust_id and o.order_no=o_no;
+ 15  
+ 16  dbms_output.put_line('*******************************************************************');
+ 17  dbms_output.put_line('Order Number : '||o_no||'		Customer Name : '||c_name);
+ 18  dbms_output.put_line('Order Date : '||o_date||'	       Phone : '||ph);
+ 19  dbms_output.put_line('*******************************************************************');
+ 20  
+ 21  dbms_output.put_line('S.no'||'   Pizza type'||'   Qty'||'	 Unit price'||'   Total amount');
+ 22  for cur in c1 loop
+ 23  dbms_output.put_line(co+1||'.'||'	     '||cur.pizza_type||'	'||cur.qty||'	    '||cur.unit_price||'       '||cur.qty*cur.unit_price);
+ 24  co:=co+1;
+ 25  end loop;
+ 26  amount(o_no,dis,amt);
+ 27  dbms_output.put_line('Total discount :  Rs'||dis);
+ 28  dbms_output.put_line('Amount to be paid :	Rs '||amt);
+ 29  end;
+ 30  /
+
+Procedure created.
+
+SQL> 
+SQL> 
+SQL> 
+SQL> declare
+  2  o_id orders.order_no%type;
+  3  
+  4  begin
+  5  o_id:='&oid';
+  6  select order_no INTO o_id from orders where order_no=o_id;
+  7  caldisplay(o_id);
+  8  
+  9  EXCEPTION
+ 10  when NO_DATA_FOUND then
+ 11  dbms_output.put_line('Order number not found!!');
+ 12  end;
+ 13  /
+Enter value for oid: OP104
+old   5: o_id:='&oid';
+new   5: o_id:='OP104';
+*******************************************************************             
+Order Number : OP104            Customer Name : Hari                            
+Order Date : 29-JUN-15           Phone : 9001200031                             
+*******************************************************************             
+S.no   Pizza type   Qty   Unit price   Total amount                             
+1.       Italian       6       200       1200                                   
+2.       Spanish       5       300       1500                                   
+Total Amount:2700                                                               
+Total discount :  Rs135                                                         
+Amount to be paid :  Rs 2565                                                    
+
+PL/SQL procedure successfully completed.
+
+SQL> /
+Enter value for oid: OP119
+old   5: o_id:='&oid';
+new   5: o_id:='OP119';
+Order number not found!!                                                        
+
+PL/SQL procedure successfully completed.
+
+SQL> SQL> rem 3. Write a stored function to display the customer name who ordered highest among 
+SQL> rem the total number of pizzas for a given pizza type.
+SQL> ed
+Wrote file afiedt.buf
+
+  1  create function cust_maxpizza(ptype IN pizza.pizza_type%type)
+  2     return orders.order_no%type AS
+  3     cname customer.cust_name%type;
+  4     c_id customer.cust_id%type;
+  5     p_id pizza.pizza_id%type;
+  6     begin
+  7     select pizza_id into p_id
+  8     from pizza where pizza_type=ptype;
+  9     select o.cust_id into c_id
+ 10     from order_list l,orders o,customer c
+ 11     where o.order_no=l.order_no
+ 12     and c.cust_id=o.cust_id
+ 13     and l.pizza_id=p_id
+ 14     group by o.cust_id
+ 15     having sum(qty)= (select max(sum(qty))
+ 16             from order_list l,orders o
+ 17             where pizza_id=p_id
+ 18             and l.order_no=o.order_no
+ 19             group by o.cust_id );
+ 20     select cust_name into cname
+ 21     from customer
+ 22     where cust_id=c_id;
+ 23     return(cname);
+ 24     EXCEPTION
+ 25     when no_data_found then
+ 26        return(0);
+ 27*    end;
+ 28  /
+
+Function created.
+
+SQL> select cust_maxpizza('Pan') from dual;
+
+CUST_MAXPIZZA('PAN')
+------------------------------------------------------------------------------------------
+Prasanth
+
+SQL> ed
+Wrote file afiedt.buf
+
+  1* select cust_maxpizza('Grilled') from dual
+SQL> /
+
+CUST_MAXPIZZA('GRILLED')
+------------------------------------------------------------------------------------------
+Sindhu
+
+SQL> ed
+Wrote file afiedt.buf
+
+  1* select cust_maxpizza('Italian') from dual
+SQL> /
+
+CUST_MAXPIZZA('ITALIAN')
+------------------------------------------------------------------------------------------
+Hari
+
+SQL> ed
+Wrote file afiedt.buf
+
+  1* select cust_maxpizza('Indian') from dual
+SQL> /
+
+CUST_MAXPIZZA('INDIAN')
+------------------------------------------------------------------------------------------
+0
+
+
+SQL>REM 4.Implement Question (2) using stored function to return the amount to be paid and 
+SQL>REM update the same, for the given order number. 
+
+SQL> CREATE OR REPLACE function discount(o_no IN orders.order_no%type) 
+  2  return NUMBER is
+  3  
+  4  amt orders.total_amt%type;
+  5  begin
+  6  select sum(o.qty*p.unit_price) into amt from order_list o,pizza p
+  7  where o.order_no=o_no AND p.pizza_id=o.pizza_id;
+  8  
+  9  if(amt >2000 AND amt < 5000) then
+ 10  return((5*amt)/100);
+ 11  elsif(amt>5000 AND amt<10000) then
+ 12  return((10*amt)/100);
+ 13  elsif(amt>10000) then
+ 14  return((amt*20)/100);
+ 15  else
+ 16  return 0;
+ 17  end if;
+ 18  end;
+ 19  /
+
+Function created.
+
+SQL> 
+SQL> CREATE OR REPLACE PROCEDURE caldisplay(o_no IN orders.order_no%type) is
+  2  c_name customer.cust_name%type;
+  3  o_date orders.order_date%type;
+  4  ph customer.phone%type;
+  5  co number(2):=0;
+  6  o_id orders.order_no%type;
+  7  dis orders.total_amt%type;
+  8  amt orders.total_amt%type;
+  9  
+ 10  cursor c1 is select p.pizza_type,l.qty,p.unit_price from orders o,pizza p,order_list l
+ 11  where o.order_no=l.order_no AND o.order_no=o_no AND p.pizza_id=l.pizza_id;
+ 12  
+ 13  begin
+ 14  
+ 15  select order_no INTO o_id from orders where order_no=o_no;
+ 16  
+ 17  select c.cust_name,c.phone,o.order_date,o.order_no into c_name,ph,o_date,o_id
+ 18  FROM customer c,orders o
+ 19  where o.cust_id=c.cust_id and o.order_no=o_no;
+ 20  
+ 21  select sum(o.qty*p.unit_price) into amt from order_list o,pizza p 
+ 22  where o.order_no=o_no AND p.pizza_id=o.pizza_id;
+ 23  
+ 24  
+ 25  dbms_output.put_line('*******************************************************************');
+ 26  dbms_output.put_line('Order Number : '||o_no||'            Customer Name : '||c_name);
+ 27  dbms_output.put_line('Order Date : '||o_date||'           Phone : '||ph);
+ 28  dbms_output.put_line('*******************************************************************');
+ 29  
+ 30  dbms_output.put_line('S.no'||'   Pizza type'||'   Qty'||'   Unit price'||'   Total amount');
+ 31  for cur in c1 loop
+ 32  dbms_output.put_line(co+1||'.'||'       '||cur.pizza_type||'       '||cur.qty||'       '||
+ 33  cur.unit_price||'       '||cur.qty*cur.unit_price);
+ 34  
+ 35  co:=co+1;
+ 36  end loop;
+ 37  dbms_output.put_line('Total Amount:'||amt);
+ 38  dis:=discount(o_no);
+ 39  amt:=amt-dis;
+ 40  update orders set total_amt=amt where order_no=o_no;
+ 41  
+ 42  dbms_output.put_line('Total discount :  Rs'||dis);
+ 43  
+ 44  dbms_output.put_line('Amount to be paid :  Rs '||amt);
+ 45  
+ 46  
+ 47  EXCEPTION 
+ 48  when NO_DATA_FOUND then
+ 49  dbms_output.put_line('Order number not found!!');
+ 50  end;
+ 51  /
+
+Procedure created.
+
+SQL> 
+SQL> EXECUTE caldisplay('OP104');
+*******************************************************************
+Order Number : OP104            Customer Name : Hari
+Order Date : 29-JUN-15           Phone : 9001200031
+*******************************************************************
+S.no   Pizza type   Qty   Unit price   Total amount
+1.       Italian       6       200       1200
+2.       Spanish       5       300       1500
+Total Amount:2700
+Total discount :  Rs135
+Amount to be paid :  Rs 2565
+
+PL/SQL procedure successfully completed.
+
+SQL> EXECUTE caldisplay('OP100');
+*******************************************************************
+Order Number : OP100            Customer Name : Hari
+Order Date : 28-JUN-15           Phone : 9001200031
+*******************************************************************
+S.no   Pizza type   Qty   Unit price   Total amount
+1.       Pan       3       100       300
+2.       Grilled       2       250       500
+3.       Italian       1       200       200
+4.       Spanish       5       300       1500
+Total Amount:2500
+Total discount :  Rs125
+Amount to be paid :  Rs 2375
+
+PL/SQL procedure successfully completed.
+
+SQL> EXECUTE caldisplay('OP119');
+Order number not found!!
+
+PL/SQL procedure successfully completed.
+
+SQL>
